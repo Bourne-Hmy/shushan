@@ -1,1 +1,347 @@
 
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>蜀山御剑录 by AI-长眉</title>
+    <!-- 使用谷歌字体，带有古风感觉 --><link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&display=swap" rel="stylesheet">
+    <style>
+        /* 使用自定义字体，营造仙侠氛围 */
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #0f1c3a 0%, #060d1b 100%); /* 深蓝星空背景 */
+            font-family: 'Ma Shan Zheng', cursive;
+            color: #d1d9e6;
+            overflow: hidden;
+        }
+
+        .game-container {
+            border: 8px solid #a37b3b; /* 棕色边框 */
+            box-shadow: 0 0 40px rgba(71, 137, 235, 0.4);
+            border-radius: 12px;
+            overflow: hidden;
+            background: #0d1e3a;
+            position: relative;
+        }
+
+        #gameCanvas {
+            display: block;
+            /* 背景改为由 Canvas 内部绘制 (SVG风格) */
+            background: none; /* 确保不显示旧的背景图 */
+            border-bottom: 4px solid #a37b3b;
+            cursor: crosshair; /* 鼠标变成十字准星，模拟瞄准 */
+        }
+
+        .ui-panel {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 15px; /* 略微缩小整体内边距 */
+            background-color: #1a2b4d;
+            border-top: 2px solid #a37b3b;
+            color: #d1d9e6;
+            font-size: 1.0em; /* 略微缩小字体 */
+        }
+        
+        /* 新增：游戏主标题样式 */
+        .game-title {
+            font-size: 1.6em; /* Make it large */
+            color: #ffffff; /* Bright white/silver */
+            text-shadow: 0 0 10px #ffcc66, 0 0 5px #ffcc66;
+            margin-bottom: 5px; /* Space from level info */
+            font-weight: bold;
+        }
+        
+        /* 新增：左侧信息分组，包含标题和境界 */
+        .left-group {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+
+        .stat-group {
+            display: flex;
+            gap: 10px; /* 缩小间距 */
+            align-items: center;
+        }
+
+        .stat {
+            background: #2b3a5b;
+            padding: 3px 8px; /* 缩小内边距 */
+            border-radius: 6px;
+            border: 1px solid #4a5c80;
+            white-space: nowrap;
+            font-size: 0.9em; /* 缩小字体 */
+        }
+        
+        /* 新增的指引按钮样式 */
+        .control-button-ui {
+            cursor: pointer;
+            background: #4a5c80;
+            padding: 3px 8px; /* 缩小内边距 */
+            border-radius: 6px;
+            border: 1px solid #ffcc66;
+            color: #ffcc66;
+            transition: background 0.2s, transform 0.1s;
+            white-space: nowrap;
+            user-select: none;
+            font-size: 0.9em; /* 缩小字体 */
+        }
+        
+        /* 大招按钮样式 (保留但已从HTML中移除) */
+        #ultimateButtonUI {
+            background: #cc3333; /* 红色主题 */
+            border: 1px solid #ffcc66;
+            color: #ffcc66;
+            transition: background 0.2s;
+        }
+
+        #ultimateButtonUI.cooldown {
+            background: #4a5c80;
+            color: #888;
+            cursor: not-allowed;
+        }
+
+        .control-button-ui:hover:not(.cooldown) {
+            background: #5c749e;
+            transform: translateY(-1px);
+        }
+
+
+        .level-info {
+            font-size: 1.0em; /* 调整大小以适应标题，不再是最大的元素 */
+            color: #ffcc66;
+            text-shadow: none; /* 移除阴影 */
+        }
+        
+        /* 作者信息样式 */
+        .author-info {
+            font-size: 0.8em;
+            color: #7a94bf;
+            padding: 3px 0;
+            white-space: nowrap;
+        }
+
+        .message-box {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.85);
+            border: 4px solid #a37b3b;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            z-index: 100;
+            color: #fff;
+            box-shadow: 0 0 20px rgba(255, 204, 102, 0.6);
+            max-width: 90%;
+            display: none; /* 初始隐藏 */
+        }
+
+        .message-box h2 {
+            margin-top: 0;
+            color: #ffcc66;
+        }
+
+        .message-box button {
+            background: #a37b3b;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            margin-top: 20px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background 0.3s, transform 0.1s;
+        }
+
+        .message-box button:hover {
+            background: #c09050;
+            transform: translateY(-2px);
+        }
+
+        /* 移动端控制 */
+        .controls {
+            display: none;
+            position: absolute;
+            bottom: 10px; /* 离底部更近 */
+            width: 100%;
+            justify-content: space-between;
+            padding: 10px 20px;
+            box-sizing: border-box;
+            z-index: 50;
+        }
+        
+        .control-group {
+            display: flex;
+            align-items: center;
+        }
+
+        .control-button {
+            width: 50px;
+            height: 50px;
+            background: rgba(163, 123, 59, 0.7);
+            border: 2px solid #ffcc66;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.2em;
+            color: #fff;
+            cursor: pointer;
+            user-select: none;
+            box-shadow: 0 0 10px rgba(255, 204, 102, 0.5);
+            margin: 5px; /* 添加间距 */
+        }
+
+        .control-button:active {
+            background: #c09050;
+            opacity: 0.9;
+        }
+        
+        /* D-Pad 布局 */
+        .d-pad {
+            display: grid;
+            grid-template-columns: 50px 50px 50px; /* 三列 */
+            grid-template-rows: 50px 50px; /* 两行 */
+            gap: 5px;
+        }
+
+        .d-row {
+            display: contents; /* 让子元素直接参与 grid 布局 */
+        }
+
+        .control-spacer {
+            visibility: hidden;
+            width: 50px;
+            height: 50px;
+        }
+        
+        #moveUp {
+            grid-column: 2 / 3; /* 放在中间 */
+            grid-row: 1 / 2;
+        }
+        
+        #moveLeft {
+            grid-column: 1 / 2;
+            grid-row: 2 / 3;
+        }
+        
+        #moveDown {
+            grid-column: 2 / 3;
+            grid-row: 2 / 3;
+        }
+        
+        #moveRight {
+            grid-column: 3 / 4;
+            grid-row: 2 / 3;
+        }
+        
+        /* Actions 布局 */
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        #ultimateTouchButton {
+            background: rgba(204, 51, 51, 0.8); /* 移动端大招按钮 */
+            width: 70px;
+            height: 70px;
+        }
+
+
+        @media (max-width: 850px) {
+            .game-container {
+                width: 95%;
+                max-width: 800px;
+                /* 调整 Canvas 比例以适应移动屏幕 */
+            }
+            #gameCanvas {
+                width: 100%;
+                height: 400px; /* 调整高度以适应小屏幕 */
+            }
+            .controls {
+                display: flex;
+                
+            }
+            .ui-panel {
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 10px;
+            }
+            .stat-group {
+                flex-wrap: wrap;
+                margin-top: 5px;
+            }
+            .stat, .level-info, .control-button-ui {
+                font-size: 0.9em;
+                padding: 3px 8px;
+            }
+            .author-info {
+                display: none; /* 在小屏幕上隐藏作者信息以节省空间 */
+            }
+            .game-title {
+                font-size: 1.2em; /* 缩小标题在移动端的大小 */
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="game-container">
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+
+    <div class="ui-panel">
+        <!-- 游戏名称和境界信息组合在左侧 -->
+        <div class="left-group"> 
+            <div class="game-title">蜀山御剑录</div> <!-- 游戏主标题 -->
+            <div class="level-info" id="levelInfo">境界: 初识剑道 (Lv. 1)</div>
+        </div>
+        
+        <div class="stat-group">
+            <span class="stat" id="hpStat">血量: 100</span>
+            <span class="stat" id="manaStat">灵力: 50</span>
+            <span class="stat" id="xpStat">经验: 0 / 100</span>
+            <span class="control-button-ui" id="controlsButton">御剑指引</span> <!-- 指引按钮 -->
+        </div>
+        <div class="author-info">作者：AI-长眉</div> <!-- 新增的作者信息 -->
+    </div>
+</div>
+
+<!-- 游戏消息/提示框 --><div class="message-box" id="messageBox">
+    <h2 id="messageTitle">恭迎道友</h2>
+    <p id="messageContent">欢迎来到蜀山仙侠世界！您的使命是斩妖除魔，提升境界。请使用 W/A/S/D 或方向键移动，鼠标点击 (或触摸点击) 释放飞剑。</p>
+    <button id="closeMessageButton">开始修仙</button>
+</div>
+
+<!-- 移动端虚拟摇杆和攻击按钮 -->
+<div class="controls">
+    <!-- D-Pad Left -->
+    <div class="control-group d-pad">
+        <div class="control-button" id="moveUp">↑</div>
+        <div class="control-button" id="moveLeft">←</div>
+        <div class="control-button" id="moveDown">↓</div>
+        <div class="control-button" id="moveRight">→</div>
+    </div>
+    <!-- Actions Right -->
+    <div class="control-group action-buttons">
+        <!-- Attack is canvas tap -->
+        <div class="control-button" id="ultimateTouchButton">大招</div> 
+    </div>
+</div>
+
+<script>
+const c=document.getElementById('gameCanvas'),dC=c.getContext('2d'),gC=document.querySelector('.game-container');const gS={RUNNING:'R',PAUSED:'P',GAMEOVER:'G',LEVEL_UP:'L'};let cS=gS.PAUSED;const uC=20,uR=150,uD=50,uCF=180,eCD=1,fS=8,fD=10,fBS=12,eSR=180;let sT=0;const eFH=25,fAM=0.5,fABR=30,fALS=5;const sEN=["尸毗","火灵神君","金神君","邓隐","轩辕老怪","毒手摩什","哈哈老祖","晓月禅师","九烈神君","黑丑","宋香娃","妖师谷辰","五鬼天王","耿昆","鸠盘婆","铁姝","毒龙尊者","史南溪","雅各达","红发老祖","绿袍","五鬼天王","许飞娘","龙飞","徐完"];const jX={x:c.width/2,y:c.height/2,s:20,h:100,mH:100,m:50,mM:50,sp:4,l:1,xP:0,xTL:100,st:'I',iT:0,aC:0,rR:0.05,lN:["初识剑道","人剑合一","元神凝固","初孕元婴","元婴大成","第二元神"],uC:0,uET:0};let fJ=[],e=[];const k={w:!1,a:!1,s:!1,d:!1,e:!1,ArrowUp:!1,ArrowLeft:!1,ArrowDown:!1,ArrowRight:!1};const hS=document.getElementById('hpStat'),mS=document.getElementById('manaStat'),xS=document.getElementById('xpStat'),lI=document.getElementById('levelInfo'),mB=document.getElementById('messageBox'),mT=document.getElementById('messageTitle'),mCt=document.getElementById('messageContent'),cMB=document.getElementById('closeMessageButton'),cB=document.getElementById('controlsButton'),uTB=document.getElementById('ultimateTouchButton'),mUB=document.getElementById('moveUp'),mDB=document.getElementById('moveDown'),mLB=document.getElementById('moveLeft'),mRB=document.getElementById('moveRight');function rC(){if(window.innerWidth<=850){const W=gC.offsetWidth-16;c.width=W;c.height=400;jX.x=c.width/2;jX.y=c.height/2}else{c.width=800;c.height=600}}window.addEventListener('resize',rC);rC();function sM(i,n,b="继续修仙",cb=()=>{cM()}){mT.textContent=i;mCt.textContent=n;cMB.textContent=b;cMB.onclick=cb;mB.style.display='block';cS=gS.PAUSED}function cM(){e.length=0;fJ.length=0;mB.style.display='none';cS=gS.RUNNING}cMB.onclick=()=>{cM()};cB.addEventListener('click',()=>{sM("御剑指引","移动 (御剑): 使用 W / A / S / D 键或键盘方向键 (移动端使用左侧 D-Pad)。\n攻击 (飞剑): 鼠标点击（或触摸点击）您想要攻击的方向，免费发射飞剑。\n大招 (玄天神雷): 按下【E 键】或点击【大招】按钮，消耗灵力对范围敌人造成伤害。\n暂停/恢复: 按下【空格键】。","明白了")});function fU(){if(jX.uC>0){console.log("大招冷却中...");return}if(jX.m<uC){sM("灵力不足",`释放玄天神雷需要 ${uC} 点灵力。`,"继续攒灵力");return}jX.m-=uC;jX.uC=uCF;jX.uET=10;const d=uD+jX.l*5;e=e.filter(en=>{if(gD(jX.x,jX.y,en.x,en.y)<uR){en.h-=d;if(en.h<=0){gX(en.xV);return!1}}return!0})}uTB.addEventListener('touchstart',e=>{e.preventDefault();fU()});function hI(){if(k.w||k.ArrowUp)jX.y-=jX.sp;if(k.s||k.ArrowDown)jX.y+=jX.sp;if(k.a||k.ArrowLeft)jX.x-=jX.sp;if(k.d||k.ArrowRight)jX.x+=jX.sp;jX.x=Math.max(jX.s/2,Math.min(c.width-jX.s/2,jX.x));jX.y=Math.max(jX.s/2,Math.min(c.height-jX.s/2,jX.y))}function dP(){dC.beginPath();dC.arc(jX.x,jX.y,jX.s/2,0,Math.PI*2);let C='#66ccff';if(jX.uET>0){C=(jX.uET%2===0)?'#ff0000':'#ffff00'}if(jX.iT>0&&Math.floor(jX.iT/5)%2===0){C='#FFFFFF'}dC.fillStyle=C;dC.shadowBlur=10;dC.shadowColor=C;dC.fill();dC.shadowBlur=0;dC.fillStyle='#000000';dC.font='12px "Ma Shan Zheng"';dC.textAlign='center';dC.textBaseline='middle';dC.fillText('侠',jX.x,jX.y);dC.closePath()}function rM(){jX.m=Math.min(jX.mM,jX.m+jX.rR)}function fF(x,y){const A=Math.atan2(y-jX.y,x-jX.x);fJ.push({x:jX.x,y:jX.y,dX:Math.cos(A)*fS,dY:Math.sin(A)*fS,s:fBS})}function uFJ(){fJ=fJ.filter(fj=>{fj.x+=fj.dX;fj.y+=fj.dY;return fj.x>0&&fj.x<c.width&&fj.y>0&&fj.y<c.height})}function dFJ(){const L=fBS+jX.l*2;fJ.forEach(fj=>{const A=Math.atan2(fj.dY,fj.dX);dC.save();dC.translate(fj.x,fj.y);dC.rotate(A);dC.fillStyle='#9933cc';dC.beginPath();const hL=L/2;const qL=L/4;dC.moveTo(hL,0);dC.lineTo(-hL,-qL);dC.lineTo(-hL,qL);dC.closePath();dC.fill();dC.shadowBlur=15;dC.shadowColor='#cc66ff';dC.fill();dC.shadowBlur=0;dC.restore()})}function sE(){let x,y;if(Math.random()<0.5){x=Math.random()<0.5?0:c.width;y=Math.random()*c.height}else{x=Math.random()*c.width;y=Math.random()<0.5?0:c.height}const pL=jX.l*0.5;const rN=sEN[Math.floor(Math.random()*sEN.length)];e.push({x:x,y:y,s:25,h:eFH,mH:eFH,sp:0.8+pL*0.05,C:'#cc3333',xV:Math.floor(10+pL*2),n:rN})}function uE(){sT++;if(sT>=eSR/jX.l){sE();sT=0}e.forEach(en=>{const A=Math.atan2(jX.y-en.y,jX.x-en.x);en.x+=Math.cos(A)*en.sp;en.y+=Math.sin(A)*en.sp})}function dE(){e.forEach(en=>{dC.fillStyle='#ffcc66';dC.font='14px "Ma Shan Zheng"';dC.textAlign='center';dC.fillText(en.n,en.x,en.y-en.s/2-15);dC.fillStyle=en.C;dC.beginPath();dC.rect(en.x-en.s/2,en.y-en.s/2,en.s,en.s);dC.fill();const hR=en.h/en.mH;dC.fillStyle='#333';dC.fillRect(en.x-en.s/2,en.y-en.s/2-10,en.s,5);dC.fillStyle='#00ff00';dC.fillRect(en.x-en.s/2,en.y-en.s/2-10,en.s*hR,5)})}function gD(x1,y1,x2,y2){return Math.sqrt(Math.pow(x2-x1,2)+Math.pow(y2-y1,2))}function cC(){fJ=fJ.filter(fj=>{let h=!1,pT=null,pD=0;e.forEach(en=>{if(!pT&&gD(fj.x,fj.y,en.x,en.y)<en.s/2+fBS/2){pT=en;pD=fD+jX.l;h=!0}});if(h){pT.h-=pD;const aR=fABR+jX.l*fALS;const sD=pD*fAM;e.forEach(oE=>{if(oE!==pT&&gD(pT.x,pT.y,oE.x,oE.y)<aR){oE.h-=sD}});e=e.filter(en=>{if(en.h<=0){gX(en.xV);return!1}return!0});return!1}return!0});if(jX.iT>0){jX.iT--;return}e.forEach(en=>{if(gD(jX.x,jX.y,en.x,en.y)<jX.s/2+en.s/2){jX.h-=eCD;jX.iT=60}})}function gX(a){jX.xP+=a;if(jX.xP>=jX.xTL){lU()}}function lU(){jX.l++;jX.xP-=jX.xTL;jX.xTL=Math.floor(jX.xTL*1.5);jX.mH+=20;jX.mM+=10;jX.h=jX.mH;jX.m=jX.mM;jX.sp+=0.2;e.length=0;fJ.length=0;sT=0;const cLN=jX.lN[jX.l-1]||`飞升证道`;sM(`恭喜道友，${cLN}！`,`您的境界已提升至 Lv.${jX.l}。生命、灵力上限提高，且飞剑威力、溅射范围增强！`,"继续斩妖")}function uSU(){hS.textContent=`血量: ${Math.max(0,jX.h)} / ${jX.mH}`;mS.textContent=`灵力: ${Math.floor(jX.m)} / ${jX.mM}`;xS.textContent=`经验: ${jX.xP} / ${jX.xTL}`;const cLN=jX.lN[jX.l-1]||'飞升证道';lI.textContent=`境界: ${cLN} (Lv. ${jX.l})`;hS.style.color=jX.h<jX.mH*0.3?'#ff6666':'#d1d9e6'}function dB(){const sG=dC.createLinearGradient(0,0,0,c.height);sG.addColorStop(0,'#00072D');sG.addColorStop(0.5,'#0B1C4B');sG.addColorStop(1,'#1A335D');dC.fillStyle=sG;dC.fillRect(0,0,c.width,c.height);dC.fillStyle='#06102A';dC.beginPath();dC.moveTo(0,c.height);dC.lineTo(c.width*0.2,c.height*0.6);dC.lineTo(c.width*0.5,c.height*0.75);dC.lineTo(c.width*0.8,c.height*0.5);dC.lineTo(c.width,c.height*0.8);dC.lineTo(c.width,c.height);dC.closePath();dC.fill();const mC='rgba(200, 220, 255, 0.15)';dC.fillStyle=mC;dC.filter='blur(5px)';dC.beginPath();dC.arc(c.width*0.1,c.height*0.5,80,0,Math.PI*2);dC.arc(c.width*0.2,c.height*0.55,100,0,Math.PI*2);dC.arc(c.width*0.3,c.height*0.45,60,0,Math.PI*2);dC.fill();dC.beginPath();dC.arc(c.width*0.8,c.height*0.3,90,0,Math.PI*2);dC.arc(c.width*0.9,c.height*0.35,70,0,Math.PI*2);dC.fill();dC.filter='none';const lG=dC.createRadialGradient(c.width/2,c.height*0.1,10,c.width/2,c.height*0.1,250);lG.addColorStop(0,'rgba(255, 255, 100, 0.3)');lG.addColorStop(0.5,'rgba(100, 200, 255, 0.1)');lG.addColorStop(1,'rgba(0, 0, 0, 0)');dC.fillStyle=lG;dC.beginPath();dC.arc(c.width/2,c.height*0.1,300,0,Math.PI*2);dC.fill()}function dUE(){if(jX.uET>0){const a=jX.uET/10;dC.beginPath();dC.arc(jX.x,jX.y,uR,0,Math.PI*2);dC.strokeStyle=`rgba(255, 255, 0, ${a})`;dC.lineWidth=5;dC.shadowBlur=20;dC.shadowColor=`rgba(0, 100, 255, ${a})`;dC.stroke();dC.shadowBlur=0;dC.closePath();jX.uET--}}function d(){dB();dFJ();dE();dUE();dP();dC.fillStyle='#ff6666';dC.fillRect(jX.x-jX.s*2,jX.y-jX.s-10,(jX.h/jX.mH)*jX.s*4,5);dC.fillStyle='#0099ff';dC.fillRect(jX.x-jX.s*2,jX.y-jX.s-3,(jX.m/jX.mM)*jX.s*4,3)}function gL(){if(cS===gS.RUNNING){hI();rM();uFJ();uE();cC();if(jX.uC>0){jX.uC--}uSU();if(jX.h<=0){cS=gS.GAMEOVER;sM("修仙失败，魂归天外",`您被妖魔击败，您的境界停留在 Lv.${jX.l}。重新开始您的问道之旅吧！`,"重入轮回",rG)}d()}requestAnimationFrame(gL)}function rG(){jX.x=c.width/2;jX.y=c.height/2;jX.h=100;jX.mH=100;jX.m=50;jX.mM=50;jX.l=1;jX.xP=0;jX.xTL=100;jX.sp=4;jX.iT=0;jX.uC=0;jX.uET=0;e.length=0;fJ.length=0;sT=0;cM();rC()}document.addEventListener('keydown',e=>{if(e.key==='W'||e.key==='w'||e.key==='ArrowUp')k.w=!0;if(e.key==='A'||e.key==='a'||e.key==='ArrowLeft')k.a=!0;if(e.key==='S'||e.key==='s'||e.key==='ArrowDown')k.s=!0;if(e.key==='D'||e.key==='d'||e.key==='ArrowRight')k.d=!0;if((e.key==='E'||e.key==='e')&&cS===gS.RUNNING){fU()}if(e.key===' '){e.preventDefault();if(cS===gS.RUNNING){sM("游戏暂停","道友，请稍事休息。再次按下【空格键】或点击下方按钮恢复。","继续修仙")}else if(cS===gS.PAUSED){const T=mT.textContent;if(T==="游戏暂停"||T==="恭迎道友"){cM()}}}});document.addEventListener('keyup',e=>{if(e.key==='W'||e.key==='w'||e.key==='ArrowUp')k.w=!1;if(e.key==='A'||e.key==='a'||e.key==='ArrowLeft')k.a=!1;if(e.key==='S'||e.key==='s'||e.key==='ArrowDown')k.s=!1;if(e.key==='D'||e.key==='d'||e.key==='ArrowRight')k.d=!1});c.addEventListener('click',e=>{if(cS===gS.RUNNING){const r=c.getBoundingClientRect();const x=e.clientX-r.left;const y=e.clientY-r.top;fF(x,y)}});function bT(E,K){E.addEventListener('touchstart',e=>{e.preventDefault();k[K]=!0});E.addEventListener('touchend',e=>{e.preventDefault();k[K]=!1});E.addEventListener('touchcancel',e=>{e.preventDefault();k[K]=!1})}bT(mUB,'w');bT(mDB,'s');bT(mLB,'a');bT(mRB,'d');c.addEventListener('touchstart',e=>{e.preventDefault();if(cS===gS.RUNNING&&e.target===c&&e.touches.length>0){const r=c.getBoundingClientRect();const x=e.touches[0].clientX-r.left;const y=e.touches[0].clientY-r.top;fF(x,y)}});window.onload=function(){uSU();gL()};
+</script>
+
+</body>
+</html>
